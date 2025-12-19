@@ -10,7 +10,7 @@
     const connection = new BareMux.BareMuxConnection("/baremux/worker.js");
 
     // 2. УКАЖИ ЗДЕСЬ СВОЙ WISP СЕРВЕР
-    const wispUrl = "wss://твой-висп-сервер.com/wisp/"; 
+    const wispUrl = "wss://factwiki.me.cdn.cloudflare.net/wisp/"; 
 
     // 3. Устанавливаем транспорт Epoxy (он работает с Wisp)
     if (!(await connection.getTransport())) {
