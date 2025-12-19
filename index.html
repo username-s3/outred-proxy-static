@@ -1,47 +1,32 @@
 <!DOCTYPE html>
 <html>
-
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
-    <title>Ultraviolet | OutRed Wisp</title>
+    <title>OutRed Wisp Proxy</title>
     <link href="index.css" rel="stylesheet">
     <style>
-        #bareServerSelect { width: 250px; }
-        body { color: white; background: #111; }
+        body { background: #111; color: white; font-family: sans-serif; text-align: center; }
+        input { padding: 10px; width: 300px; border-radius: 5px; border: none; }
+        select { padding: 10px; margin: 10px; border-radius: 5px; }
     </style>
 </head>
-
 <body>
-    <h1 style="text-align: center;">OutRed Static Proxy (Wisp Edition)</h1>
+    <h1>OutRed Static (Wisp)</h1>
     
-    <div class="desc" style="text-align: center;">
-        <p>Теперь работает через Wisp протокол.</p>
-    </div>
-
-    <center>
-        <select id="bareServerSelect">
-            <option value="wss://factwiki.me.cdn.cloudflare.net/wisp/">FactWiki Wisp (Fast)</option>
-        </select>
-    </center><br>
+    <select id="wispServerSelect">
+        <option value="wss://factwiki.me.cdn.cloudflare.net/wisp/">FactWiki (Cloudflare)</option>
+        <option value="wss://wisp.mercurywork.shop/">Mercury (Public)</option>
+    </select>
 
     <form id="proxyForm">
-        <input id="urlInput" placeholder="Search the web freely">
+        <input id="urlInput" placeholder="Введите адрес сайта...">
     </form>
 
-    <footer style="text-align: center; margin-top: 20px;">
-        <span>Ultraviolet &copy; TN 2024</span>
-    </footer>
-
-    <!-- ПОДКЛЮЧАЕМ СКРИПТЫ (ВАЖЕН ПОРЯДОК) -->
-    <script src="baremux/index.js"></script>
+    <!-- ПОДКЛЮЧАЕМ СКРИПТЫ ЧЕРЕЗ CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@mercuryworkshop/bare-mux@1.8.3/dist/index.js"></script>
     <script src="uv/uv.bundle.js"></script>
     <script src="uv/uv.config.js"></script>
-    
-    <script>
-        // Логика выбора сервера (пусть висит для красоты)
-        console.log('Wisp server set: wss://factwiki.me.cdn.cloudflare.net/wisp/');
-    </script>
     <script src="index.js"></script>
 </body>
 </html>
