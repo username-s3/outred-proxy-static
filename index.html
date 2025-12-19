@@ -2,77 +2,81 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>OutRed Wisp Debug</title>
+    <title>OutRed Wisp Fixed</title>
     <style>
         body { background: #111; color: white; text-align: center; font-family: sans-serif; padding-top: 50px; }
         #status { color: #00ff00; margin-bottom: 20px; font-weight: bold; }
-        .error { color: #ff4444; background: #222; padding: 10px; border: 1px solid red; display: inline-block; }
-        input { padding: 12px; width: 300px; border-radius: 5px; border: none; }
-        button { padding: 12px 20px; cursor: pointer; border-radius: 5px; border: none; background: #444; color: white; }
+        .error { color: #ff4444; background: #222; padding: 15px; border: 1px solid red; display: inline-block; border-radius: 8px; }
+        input { padding: 12px; width: 300px; border-radius: 5px; border: none; font-size: 16px; }
+        button { padding: 12px 20px; cursor: pointer; border-radius: 5px; border: none; background: #555; color: white; font-weight: bold; }
+        button:hover { background: #777; }
+        #debug-log { font-size: 11px; color: #666; margin-top: 20px; }
     </style>
 </head>
 <body>
     <h1>OutRed Static Proxy</h1>
     
-    <div id="status">Проверка файлов...</div>
-    <div id="debug-log" style="font-size: 12px; color: #888; margin-bottom: 20px;"></div>
+    <div id="status">Загрузка библиотек...</div>
 
     <form id="proxyForm" style="display:none;">
-        <input id="urlInput" type="text" placeholder="Введите адрес сайта...">
-        <button type="submit">ЗАПУСК</button>
+        <input id="urlInput" type="text" placeholder="Введите URL или поисковый запрос...">
+        <button type="submit">ПОЕХАЛИ</button>
     </form>
 
-    <!-- ПРОВЕРКА ЗАГРУЗКИ СКРИПТОВ -->
+    <div id="debug-log"></div>
+
     <script>
         function log(msg) { document.getElementById('debug-log').innerHTML += msg + "<br>"; }
-        window.onerror = function(m, u, l) { 
-            document.getElementById('status').innerHTML = `<div class="error">ОШИБКА КОДА: ${m}</div>`;
+        
+        // Глобальная ошибка для отладки
+        window.onerror = function(m, u, l) {
+            document.getElementById('status').innerHTML = `<div class="error">ОШИБКА: ${m}</div>`;
         };
     </script>
 
-    <!-- Подключаем BareMux -->
-    <script src="https://cdn.jsdelivr.net/npm/@mercuryworkshop/bare-mux@1.8.3/dist/index.js" 
-            onerror="document.getElementById('status').innerHTML='<div class=error>ОШИБКА: Не удалось загрузить BareMux из интернета</div>'"></script>
-    
-    <!-- Подключаем UV файлы (Проверь, что они реально есть в папке uv/) -->
-    <script src="uv/uv.bundle.js" 
-            onerror="document.getElementById('status').innerHTML='<div class=error>ОШИБКА: Файл uv/uv.bundle.js не найден в репозитории!</div>'"></script>
-    
-    <script src="uv/uv.config.js" 
-            onerror="document.getElementById('status').innerHTML='<div class=error>ОШИБКА: Файл uv/uv.config.js не найден в репозитории!</div>'"></script>
+    <!-- Подключаем библиотеки -->
+    <script src="https://unpkg.com/@mercuryworkshop/bare-mux@1.8.3/dist/index.js" onload="log('BareMux загружен')" onerror="log('BareMux НЕ ЗАГРУЖЕН')"></script>
+    <script src="uv/uv.bundle.js" onload="log('UV Bundle загружен')" onerror="log('UV Bundle НЕ ЗАГРУЖЕН')"></script>
+    <script src="uv/uv.config.js" onload="log('UV Config загружен')" onerror="log('UV Config НЕ ЗАГРУЖЕН')"></script>
 
     <script>
-        // Если скрипты загрузились, этот код выполнится
-        log("Скрипты загружены успешно.");
-        const status = document.getElementById('status');
-        const form = document.getElementById('proxyForm');
+        // Ждем полной загрузки всех скриптов
+        window.addEventListener('load', async () => {
+            const status = document.getElementById('status');
+            const form = document.getElementById('proxyForm');
 
-        try {
-            const blob = new Blob([
-                `importScripts('https://cdn.jsdelivr.net/npm/@mercuryworkshop/bare-mux@1.8.3/dist/worker.js');`
-            ], { type: 'application/javascript' });
-            const workerUrl = URL.createObjectURL(blob);
-            const connection = new BareMux.BareMuxConnection(workerUrl);
+            log("Проверка наличия переменных...");
 
-            status.innerText = "ГОТОВО. Wisp активен.";
-            form.style.display = "block";
+            if (typeof BareMux === 'undefined') {
+                status.innerHTML = `<div class="error">БИБЛИОТЕКА НЕ НАЙДЕНА!<br>BareMux не загрузился. Попробуй отключить Адблок или сменить интернет (VPN).</div>`;
+                return;
+            }
 
-            form.onsubmit = async (e) => {
-                e.preventDefault();
-                const url = document.getElementById('urlInput').value;
-                status.innerText = "Установка соединения...";
+            try {
+                // Инициализация воркера BareMux
+                const blob = new Blob([
+                    `importScripts('https://unpkg.com/@mercuryworkshop/bare-mux@1.8.3/dist/worker.js');`
+                ], { type: 'application/javascript' });
+                const workerUrl = URL.createObjectURL(blob);
+                const connection = new BareMux.BareMuxConnection(workerUrl);
 
-                await connection.setTransport("https://cdn.jsdelivr.net/npm/@mercuryworkshop/epoxy-transport@0.3.11/dist/index.mjs", [{ wisp: "wss://factwiki.me.cdn.cloudflare.net/wisp/" }]);
-                
-                status.innerText = "Регистрация Service Worker...";
-                await navigator.serviceWorker.register('./sw.js', { scope: __uv$config.prefix });
+                status.innerText = "Wisp готов!";
+                form.style.display = "block";
 
-                status.innerText = "Переход...";
-                location.href = __uv$config.prefix + __uv$config.encodeUrl(url);
-            };
-        } catch (e) {
-            status.innerHTML = `<div class="error">ОШИБКА ИНИЦИАЛИЗАЦИИ: ${e.message}</div>`;
-        }
-    </script>
-</body>
-</html>
+                form.onsubmit = async (e) => {
+                    e.preventDefault();
+                    const url = document.getElementById('urlInput').value.trim();
+                    if (!url) return;
+
+                    status.innerText = "Подключаемся к Wisp...";
+                    
+                    try {
+                        // Установка транспорта (твоя ссылка на висп)
+                        await connection.setTransport("https://cdn.jsdelivr.net/npm/@mercuryworkshop/epoxy-transport@0.3.11/dist/index.mjs", [{ wisp: "wss://factwiki.me.cdn.cloudflare.net/wisp/" }]);
+                        
+                        status.innerText = "Регистрация Service Worker...";
+                        await navigator.serviceWorker.register('./sw.js', { scope: __uv$config.prefix });
+
+                        status.innerText = "Открываем...";
+                        
+                        let finalUrl = url;
