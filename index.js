@@ -1,23 +1,36 @@
-const form = document.querySelector('form');
-const input = document.querySelector('input');
-const connection = new BareMux.BareMuxConnection("/baremux/worker.js");
+const form = document.getElementById('proxyForm');
+const input = document.getElementById('urlInput');
+
+// Создаем воркер BareMux из CDN, чтобы не трахаться с локальными файлами
+const blob = new Blob([
+    `importScripts('https://cdn.jsdelivr.net/npm/@mercuryworkshop/bare-mux@1.8.3/dist/worker.js');`
+], { type: 'application/javascript' });
+const workerUrl = URL.createObjectURL(blob);
+const connection = new BareMux.BareMuxConnection(workerUrl);
 
 form.addEventListener('submit', async (event) => {
     event.preventDefault();
 
-    const wispUrl = "wss://factwiki.me.cdn.cloudflare.net/wisp/";
+    const wispUrl = document.getElementById('wispServerSelect').value;
     
-    // Устанавливаем транспорт Epoxy
-    // Мы передаем путь к нашему mjs файлу и адрес виспа
-    await connection.setTransport("/epoxy/index.mjs", [{ wisp: wispUrl }]);
+    try {
+        // Устанавливаем транспорт Epoxy напрямую из CDN
+        await connection.setTransport("https://cdn.jsdelivr.net/npm/@mercuryworkshop/epoxy-transport@0.3.11/dist/index.mjs", [{ wisp: wispUrl }]);
 
-    // Регаем SW
-    await navigator.serviceWorker.register('./sw.js', {
-        scope: __uv$config.prefix
-    });
+        // Регаем UV Service Worker
+        if ('serviceWorker' in navigator) {
+            await navigator.serviceWorker.register('./sw.js', {
+                scope: __uv$config.prefix
+            });
+        }
 
-    let url = input.value.trim();
-    if (!url.startsWith('http')) url = 'https://www.google.com/search?q=' + url;
+        let url = input.value.trim();
+        if (!url.startsWith('http')) url = 'https://www.google.com/search?q=' + url;
 
-    location.href = __uv$config.prefix + __uv$config.encodeUrl(url);
+        // Переходим
+        location.href = __uv$config.prefix + __uv$config.encodeUrl(url);
+    } catch (err) {
+        console.error("Ошибка:", err);
+        alert("Ошибка запуска: " + err.message);
+    }
 });
