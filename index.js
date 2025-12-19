@@ -12,7 +12,7 @@ form.addEventListener('submit', async (event) => {
     event.preventDefault();
     console.log("Кнопка нажата, начинаем запуск...");
 
-    const wispUrl = "wss://factwiki.me/wisp/";
+    const wispUrl = "wss://wisp.mercurywork.shop/";
     
     try {
         // 2. Устанавливаем транспорт
