@@ -2,31 +2,69 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
-    <title>OutRed Wisp Proxy</title>
-    <link href="index.css" rel="stylesheet">
+    <title>OutRed Wisp</title>
+    <link rel="stylesheet" href="index.css">
     <style>
-        body { background: #111; color: white; font-family: sans-serif; text-align: center; }
-        input { padding: 10px; width: 300px; border-radius: 5px; border: none; }
-        select { padding: 10px; margin: 10px; border-radius: 5px; }
+        body { background: #111; color: white; text-align: center; font-family: sans-serif; }
+        #status { color: yellow; margin-bottom: 20px; font-size: 14px; }
+        .error { color: red; }
     </style>
 </head>
 <body>
-    <h1>OutRed Static (Wisp)</h1>
-    
-    <select id="wispServerSelect">
-        <option value="wss://factwiki.me.cdn.cloudflare.net/wisp/">FactWiki (Cloudflare)</option>
-        <option value="wss://wisp.mercurywork.shop/">Mercury (Publicel)</option>
-    </select>
+    <h1>OutRed Static Proxy</h1>
+    <div id="status">Ожидание инициализации...</div>
 
     <form id="proxyForm">
-        <input id="urlInput" placeholder="Введите адрес сайта...">
+        <input id="urlInput" type="text" placeholder="Введите URL или поисковый запрос" style="width: 300px; padding: 10px;">
+        <button type="submit" style="padding: 10px;">GO</button>
     </form>
 
-    <!-- ПОДКЛЮЧАЕМ СКРИПТЫ ЧЕРЕЗ CDN -->
+    <!-- СКРИПТЫ -->
     <script src="https://cdn.jsdelivr.net/npm/@mercuryworkshop/bare-mux@1.8.3/dist/index.js"></script>
     <script src="uv/uv.bundle.js"></script>
     <script src="uv/uv.config.js"></script>
-    <script src="index.js"></script>
+
+    <script>
+        const status = document.getElementById('status');
+        const form = document.getElementById('proxyForm');
+        const input = document.getElementById('urlInput');
+
+        // Инициализация Wisp через Blob-воркер
+        const blob = new Blob([
+            `importScripts('https://cdn.jsdelivr.net/npm/@mercuryworkshop/bare-mux@1.8.3/dist/worker.js');`
+        ], { type: 'application/javascript' });
+        const workerUrl = URL.createObjectURL(blob);
+        const connection = new BareMux.BareMuxConnection(workerUrl);
+
+        status.innerText = "Wisp готов к работе.";
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            status.innerText = "Запуск... (установка транспорта)";
+
+            try {
+                // Установка Wisp транспорта
+                await connection.setTransport("https://cdn.jsdelivr.net/npm/@mercuryworkshop/epoxy-transport@0.3.11/dist/index.mjs", [{ wisp: "wss://factwiki.me.cdn.cloudflare.net/wisp/" }]);
+                
+                status.innerText = "Регистрация Service Worker...";
+                
+                // Важно: ./sw.js для GitHub Pages
+                await navigator.serviceWorker.register('./sw.js', {
+                    scope: __uv$config.prefix
+                });
+
+                let url = input.value.trim();
+                if (!url.startsWith('http')) url = 'https://www.google.com/search?q=' + url;
+
+                status.innerText = "Переход...";
+                // Генерируем финальный URL
+                location.href = __uv$config.prefix + __uv$config.encodeUrl(url);
+
+            } catch (err) {
+                status.innerHTML = `<span class="error">ОШИБКА: ${err.message}</span>`;
+                console.error(err);
+            }
+        });
+    </script>
 </body>
 </html>
