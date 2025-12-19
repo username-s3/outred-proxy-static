@@ -1,37 +1,47 @@
-<!-- Подключаем скрипты в head или перед основным кодом -->
-<script src="baremux/index.js"></script>
-<script src="uv/uv.bundle.js"></script>
-<script src="uv/uv.config.js"></script>
+<!DOCTYPE html>
+<html>
 
-<!-- Твой основной скрипт управления -->
-<script>
-  async function setupWisp() {
-    // 1. Инициализируем соединение с воркером bare-mux
-    const connection = new BareMux.BareMuxConnection("/baremux/worker.js");
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <title>Ultraviolet | OutRed Wisp</title>
+    <link href="index.css" rel="stylesheet">
+    <style>
+        #bareServerSelect { width: 250px; }
+        body { color: white; background: #111; }
+    </style>
+</head>
 
-    // 2. УКАЖИ ЗДЕСЬ СВОЙ WISP СЕРВЕР
-    const wispUrl = "wss://factwiki.me.cdn.cloudflare.net/wisp/"; 
+<body>
+    <h1 style="text-align: center;">OutRed Static Proxy (Wisp Edition)</h1>
+    
+    <div class="desc" style="text-align: center;">
+        <p>Теперь работает через Wisp протокол.</p>
+    </div>
 
-    // 3. Устанавливаем транспорт Epoxy (он работает с Wisp)
-    if (!(await connection.getTransport())) {
-        await connection.setTransport("/epoxy/index.mjs", [{ wisp: wispUrl }]);
-    }
-    console.log("Wisp подключен!");
-  }
+    <center>
+        <select id="bareServerSelect">
+            <option value="wss://factwiki.me.cdn.cloudflare.net/wisp/">FactWiki Wisp (Fast)</option>
+        </select>
+    </center><br>
 
-  setupWisp();
+    <form id="proxyForm">
+        <input id="urlInput" placeholder="Search the web freely">
+    </form>
 
-  // Функция для запуска прокси (при нажатии на кнопку)
-  function launchProxy(url) {
-    setupWisp().then(() => {
-      const encodedUrl = __uv$config.prefix + __uv$config.encodeUrl(url);
-      
-      // Регистрация SW и переход
-      navigator.serviceWorker.register('./sw.js', {
-        scope: __uv$config.prefix
-      }).then(() => {
-        location.href = encodedUrl;
-      });
-    });
-  }
-</script>
+    <footer style="text-align: center; margin-top: 20px;">
+        <span>Ultraviolet &copy; TN 2024</span>
+    </footer>
+
+    <!-- ПОДКЛЮЧАЕМ СКРИПТЫ (ВАЖЕН ПОРЯДОК) -->
+    <script src="baremux/index.js"></script>
+    <script src="uv/uv.bundle.js"></script>
+    <script src="uv/uv.config.js"></script>
+    
+    <script>
+        // Логика выбора сервера (пусть висит для красоты)
+        console.log('Wisp server set: wss://factwiki.me.cdn.cloudflare.net/wisp/');
+    </script>
+    <script src="index.js"></script>
+</body>
+</html>
